@@ -122,7 +122,7 @@ function generateJwtToken(user) {
             gender: user.gender  
         },
         secret,                    // Use secret key from environment variables
-        { expiresIn: '1d' }        // Token expires in 1 day
+        { expiresIn: '30d' }        // Token expires in 1 day
     );
 }
 
