@@ -27,6 +27,14 @@ exports.saveScan = async (req, res) => {
         bodyShape,
         headPosture,
         shoulderPosture,
+        
+        // ✅ New muscle ratings
+        shoulderRating,
+        armRating,
+        absRating,
+        latsRating,
+        forearmRating,
+        chestRating,
     } = req.body;
 
     // Log incoming payload for debugging
@@ -45,15 +53,14 @@ exports.saveScan = async (req, res) => {
         // Fetch the last scan for the given user_id to determine the next scanNumber
         const lastScan = await Scan.findOne({
             where: { user_id },
-            order: [['dateOfScan', 'DESC']], // Order by the most recent scan
+            order: [['dateOfScan', 'DESC']],
         });
 
-        // Calculate the next scanNumber
-        const scanNumber = lastScan && typeof lastScan.scanNumber === 'number' 
-            ? lastScan.scanNumber + 1 
+        const scanNumber = lastScan && typeof lastScan.scanNumber === 'number'
+            ? lastScan.scanNumber + 1
             : 1;
 
-        // Create the new scan in the database
+        // Create new scan with all fields
         const newScan = await Scan.create({
             user_id,
             frontViewPhotoURL,
@@ -66,23 +73,26 @@ exports.saveScan = async (req, res) => {
             shoulderPosture: shoulderPosture || null,
             bodyShape: bodyShape || null,
             scanNumber,
-            dateOfScan: new Date(), // Add current timestamp if required
+            dateOfScan: new Date(),
+
+            // ✅ Muscle ratings
+            shoulderRating: shoulderRating ?? null,
+            armRating: armRating ?? null,
+            absRating: absRating ?? null,
+            latsRating: latsRating ?? null,
+            forearmRating: forearmRating ?? null,
+            chestRating: chestRating ?? null,
         });
 
-        // Log the created scan for debugging
         console.log("[DEBUG] New scan added:", newScan);
 
-        // Respond with success and the new scan
         return res.json({
             success: true,
             message: "Scan added to scan database successfully",
             scan: newScan,
         });
     } catch (error) {
-        // Log the error for debugging
         console.error("[ERROR] Error adding scan to database:", error);
-
-        // Respond with an error message
         return res.status(500).json({
             success: false,
             code: "INTERNAL_SERVER_ERROR",
@@ -91,6 +101,7 @@ exports.saveScan = async (req, res) => {
         });
     }
 };
+
 
 // DELETE INDIVIDUAL SCAN IN DATABASE
 // /api/scan/:scan_id
@@ -221,6 +232,48 @@ const generatePresignedUrl = async (key) => {
     });
     return await getSignedUrl(s3, command, { expiresIn: 3600 }); // URL valid for 1 hour
 };
+
+// /api/scan/getMostRecentUserScan
+exports.getMostRecentUserScan = async (req, res) => {
+    const { user_id } = req.query; 
+
+    if (!user_id) {
+        return res.status(400).json({
+            success: false,
+            message: "user_id is required",
+        });
+    }
+
+    try {
+        // Fetch the most recent scan for the given user_id
+        const mostRecentScan = await Scan.findOne({
+            where: {
+                user_id: user_id,
+            },
+            order: [['createdAt', 'DESC']], // Sort by createdAt in descending order
+        });
+
+        if (!mostRecentScan) {
+            return res.status(404).json({
+                success: false,
+                message: "No scans found for the given user ID",
+            });
+        }
+
+        return res.json({
+            success: true,
+            message: "Most recent scan retrieved successfully",
+            data: mostRecentScan.dataValues, // Include all original scan data
+        });
+    } catch (error) {
+        console.error("Error fetching the most recent user scan:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
+};
+
 
 // /api/scan/getScanPhotos
 exports.getScanPhotos = async (req, res) => {

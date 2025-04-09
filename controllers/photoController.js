@@ -19,7 +19,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 // Compress image using sharp
 const compressImage = async (fileBuffer) => {
     return await sharp(fileBuffer)
-      .withMetadata()             // <-- Add this to preserve metadata
+      .withMetadata()             // <-- preserve metadata
       .resize({ width: 1024 })
       .jpeg({ quality: 80 })
       .toBuffer();

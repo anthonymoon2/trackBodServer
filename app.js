@@ -30,6 +30,13 @@ app.use('/api/analysis', analysisRouter);
 app.use('/api/scan', scanRoutes);
 app.use('/api/user', userRoutes);
 
+// simple routes for aws beanstalk
+app.get('/health', (req, res) => res.status(200).send('OK'));
+
+app.get('/', (req, res) => {
+    res.status(200).send('Welcome to the TrackBod API!');
+});
+
 // Start the server
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running in ${ENV} mode on port ${PORT}`);

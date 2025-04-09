@@ -3,16 +3,12 @@ const { Model } = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
   class Scan extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
     static associate(models) {
       // Define the association with the User model
       Scan.belongsTo(models.User, { foreignKey: 'user_id', as: 'user' });
     }
   }
+
   Scan.init({
     user_id: {
       type: DataTypes.INTEGER,
@@ -69,10 +65,37 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
+
+    // ✅ New Muscle Rating Fields
+    shoulderRating: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    armRating: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    absRating: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    latsRating: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    forearmRating: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    chestRating: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
   }, {
     sequelize,
     modelName: 'Scan',
     timestamps: false,
   });
+
   return Scan;
 };

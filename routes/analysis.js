@@ -7,9 +7,6 @@ const OpenAI = require('openai');
 
 const { User } = require('../models');
 
-// Middleware
-const authenticate = require('../middlewares/authMiddleware');
-
 dotenv.config();
 const router = express.Router();
 
@@ -37,8 +34,10 @@ const generatePresignedUrl = async (key) => {
     return await getSignedUrl(s3, command, { expiresIn: 3600 }); // URL valid for 1 hour
 };
 
+
+// call open ai api using prompt
 // Route: /api/analysis/:id
-router.post("/:id", authenticate, async (req, res) => {
+router.post("/:id", async (req, res) => {
     console.log("Incoming analysis request:", req.body);
 
     const userId = req.params.id; // Extract user ID from the path parameter
@@ -93,7 +92,7 @@ router.post("/:id", authenticate, async (req, res) => {
                     content: [
                         {
                             type: "text",
-                            text: "Imagine you are creating a detailed hypothetical fitness character. Using the provided images and numerical inputs, estimate some hypothetical attributes for the character. Based on visual cues and the information provided, what would these attributes be?",
+                            text: "Imagine you are creating a detailed hypothetical fitness character. The character's attributes should be estimated based on the provided images and numerical inputs, combining visual cues with measurable fitness data to create realistic hypothetical traits.",
                         },
                         {
                             type: "text",
@@ -131,22 +130,32 @@ router.post("/:id", authenticate, async (req, res) => {
                         },
                         {
                             type: "text",
-                            text: `Estimate the following attributes for the fictional character:
+                            text: `Estimate the following attributes for the fictional character. First, determine if the provided images contain enough visual data of the upper body (e.g., torso and arms). If the images do not clearly show the upper body (e.g., only the face or unrelated parts are visible), respond with:
                             {
-                                "bodyFatPercentage": integer (a whole number between 10 and 40),
+                                "error": "Insufficient upper body data in the provided images"
+                            }
+                            Otherwise, estimate the attributes as follows:
+                            {
+                                "bodyFatPercentage": integer (a whole number between 4 and 40),
                                 "leanMass": number (a decimal),
                                 "fatMass": number (a decimal),
-                                "headPosture": "neutral|forward tilt|tilted left|tilted right",
-                                "shoulderPosture": "neutral|slightly rounded|rounded|uneven",
-                                "bodyShape": "ectomorph|mesomorph|endomorph"
+                                "headPosture": "neutral" | "forward tilt" | "tilted left" | "tilted right",
+                                "shoulderPosture": "neutral" | "slightly rounded" | "rounded" | "uneven",
+                                "bodyShape": "ectomorph" | "mesomorph" | "endomorph",
+                                "shoulderRating": integer (0–100),
+                                "armRating": integer (0–100),
+                                "absRating": integer (0–100),
+                                "latsRating": integer (0–100),
+                                "forearmRating": integer (0–100),
+                                "chestRating": integer (0–100)
                             }
-                    
-                            Respond only in JSON format. Avoid any additional commentary or explanations.`,
+                            Respond in valid JSON format, allowing for natural variability within the estimated ranges.`
+                            ,
                         },
                     ]
                 },
             ],
-            temperature: 0.2,
+            temperature: 0.8,
             max_tokens: 350,
         };
 
@@ -171,6 +180,8 @@ router.post("/:id", authenticate, async (req, res) => {
 
         // Respond with parsed metrics
         res.setHeader('Content-Type', 'application/json');
+
+        // Convert parsedMetrics (a JavaScript object) into a JSON string and send it back to frontend
         res.json(parsedMetrics);
     } catch (error) {
         console.error("Error processing analysis request:", error.message);
